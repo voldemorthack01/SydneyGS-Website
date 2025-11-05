@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - Sydney Gold Star Group</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="admin-container">
+        <div id="loginSection" class="admin-section">
+            <div class="admin-login-box">
+                <h1>Admin Login</h1>
+                <form id="loginForm">
+                    <div class="form-group">
+                        <label for="username">Username</label>
+                        <input type="text" id="username" name="username" required autocomplete="username">
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required autocomplete="current-password">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Login</button>
+                    <div id="loginMessage" class="form-message"></div>
+                </form>
+            </div>
+        </div>
+
+        <div id="adminSection" class="admin-section" style="display: none;">
+            <div class="admin-header">
+                <h1>Quote Submissions</h1>
+                <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+            </div>
+            <div class="submissions-container">
+                <table id="submissionsTable" class="submissions-table">
+                    <thead>
+                        <tr>
+                            <th>Date/Time</th>
+                            <th>Full Name</th>
+                            <th>Phone</th>
+                            <th>Email</th>
+                            <th>Message</th>
+                        </tr>
+                    </thead>
+                    <tbody id="submissionsBody">
+                        <tr>
+                            <td colspan="5" class="loading">Loading submissions...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+</body>
+</html>
