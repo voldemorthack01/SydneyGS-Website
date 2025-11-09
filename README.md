@@ -41,8 +41,8 @@ The website will be available at `http://localhost:3000`
 
 ### Admin Credentials
 
-- **Username**: `username`
-- **Password**: `password`
+- **Username**: `Amir`
+- **Password**: `amireli21`
 
 ## Project Structure
 
