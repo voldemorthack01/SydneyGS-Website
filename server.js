@@ -2,9 +2,16 @@ const express = require('express');
 const Database = require('better-sqlite3');
 const path = require('path');
 const bodyParser = require('body-parser');
+const fs = require('fs'); // <-- ADD THIS
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Ensure the 'data' folder exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir);
+}
 
 // Middleware
 app.use(bodyParser.json());
