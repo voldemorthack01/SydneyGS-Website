@@ -86,3 +86,21 @@ app.get('/api/admin/submissions', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+const https = require('https');
+
+// Replace with your own domain!
+const SELF_URL = 'https://sydneygs.com/';
+
+function pingSelf() {
+  https.get(SELF_URL, (res) => {
+    console.log(`Self-ping: ${SELF_URL} ${res.statusCode}`);
+  }).on('error', (e) => {
+    console.error('Error self-pinging:', e.message);
+  });
+}
+
+// Ping every 7 minutes
+setInterval(pingSelf, 7 * 60 * 1000);
+// Initial ping on startup
+pingSelf();
