@@ -191,11 +191,29 @@ app.get('/api/admin/submissions', (req, res) => {
   }
 });
 
-// Serve Static Files
+// Clean URL Middleware & Redirects
+app.use((req, res, next) => {
+  // Redirect .html requests to clean URLs (301 Permanent)
+  if (req.path.endsWith('.html') && !['/404.html', '/500.html'].includes(req.path)) {
+    const cleanPath = req.path.slice(0, -5);
+    return res.redirect(301, cleanPath);
+  }
+  next();
+});
+
+// Serve Static Files (CSS, JS, Images)
 app.use(express.static(path.join(__dirname, 'public'), {
-  maxAge: '1d', // Cache for 1 day
+  extensions: [], // Do not auto-resolve .html
+  index: false,   // Handle root manually
+  maxAge: '1d',
   etag: true
 }));
+
+// Clean Routes
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'public', 'index.html')));
+app.get('/contact', (req, res) => res.sendFile(path.join(__dirname, 'public', 'contact.html')));
+app.get('/gallery', (req, res) => res.sendFile(path.join(__dirname, 'public', 'gallery.html')));
+app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'public', 'admin.html')));
 
 // Self Ping (for keeping alive if needed, logic preserved but configurable)
 const https = require('https');
@@ -227,6 +245,10 @@ app.use((err, req, res, next) => {
   res.status(500).sendFile(path.join(__dirname, 'public', '500.html')); // Assuming we will create this
 });
 
-app.listen(PORT, () => {
-  logger.info(`Server running on port ${PORT}`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    logger.info(`Server running on port ${PORT}`);
+  });
+}
+
+module.exports = app;

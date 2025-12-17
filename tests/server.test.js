@@ -3,80 +3,55 @@ const fs = require('fs');
 const path = require('path');
 const Database = require('better-sqlite3');
 
-// Mock console.log/error to keep test output clean
+// Mock console to keep output clean
 global.console = {
     ...console,
     // log: jest.fn(),
     // error: jest.fn(),
 };
 
-// We need to point to a test database or mock it
-// For integration testing integration with real DB is simplified if we just let it create a file
-// To avoid polluting production DB, we can set env var before requiring server? 
-// But server.js executes immediately on require. 
-// A common pattern is exporting `app`, and `start` function.
-// Since server.js calls `app.listen` immediately, requiring it starts the server.
-// We can use a different trick: jest.mock('better-sqlite3') or ensure separate env.
+describe('Server API Integration', () => {
+    let app;
 
-// Actually, `server.js` checks `process.env.PORT`. 
-// If we want to test cleanly, we usually refactor server.js to export app.
-// I will blindly assumes server.js exports app if I didn't change it... 
-// Wait, I rewrote server.js and it ends with `app.listen(...)`
-// I should have exported app. 
-// I'll modify server.js slightly to export app.
-
-describe('Server API', () => {
-    let server;
-    let baseUrl;
-
-    beforeAll(async () => {
-        // Dynamic import to start server
-        process.env.PORT = 3001; // Test port
+    beforeAll(() => {
         process.env.NODE_ENV = 'test';
-        // We can't easily prevent `app.listen` in the current server.js structure without refactor.
-        // So we just let it run on 3001 and request against localhost:3001
+        process.env.ADMIN_USERNAME = 'Admin';
+        process.env.ADMIN_PASSWORD_HASH = '$2b$10$x7dmeNWzxfqz40W8tgxp7OhT3YJcxQO5yPpv7FG/77mDAgXjvMedgO'; // Pass123
+        // Mock session secret to avoid warning
+        process.env.SESSION_SECRET = 'test_secret';
 
-        // However, require will run it. 
-        // We'll use `jest.resetModules` if needed.
-
+        // Import app (it won't listen due to our wrapper)
         jest.isolateModules(() => {
-            // Mocking DB if we wanted, but let's use real DB for integration
-            // But we want a temp DB.
-            // DATA folder is `data`. We can't easily change it without ENV var or code change.
-            // We'll just run it. It's SQLite, harmless row insertion.
-            require('../server');
+            app = require('../server');
         });
-
-        baseUrl = 'http://localhost:3001';
-
-        // Wait for server to start (crude)
-        await new Promise(r => setTimeout(r, 1000));
     });
 
-    afterAll(() => {
-        // Can't easily close express server if not exported.
-        // We will just let Jest force exit or rely on internal cleanup.
-        // In a real audit, I would refactor server.js to `module.exports = app; if (require.main===module) app.listen...`
-    });
+    const req = () => request(app);
 
-    test('GET / should return 200', async () => {
-        const res = await request(baseUrl).get('/');
+    test('GET / should return 200 via Clean URL', async () => {
+        const res = await req().get('/');
         expect(res.statusCode).toBe(200);
     });
 
+    test('GET /contact.html should redirect to /contact', async () => {
+        const res = await req().get('/contact.html');
+        expect(res.statusCode).toBe(301);
+        expect(res.headers.location).toBe('/contact');
+    });
+
     test('POST /api/submit with valid data should succeed', async () => {
-        const res = await request(baseUrl).post('/api/submit').send({
-            full_name: 'Test User',
+        const res = await req().post('/api/submit').send({
+            full_name: 'Test Testson',
             phone: '0400000000',
             email: 'test@example.com',
-            message: 'Hello World'
+            message: 'Integration Test Message'
         });
         expect(res.statusCode).toBe(200);
         expect(res.body.success).toBe(true);
     });
 
     test('POST /api/submit with missing data should fail', async () => {
-        const res = await request(baseUrl).post('/api/submit').send({
+        const res = await req().post('/api/submit').send({
             full_name: 'Test Only'
         });
         expect(res.statusCode).toBe(400);
@@ -84,27 +59,28 @@ describe('Server API', () => {
     });
 
     test('POST /api/admin/login with wrong password should fail', async () => {
-        const res = await request(baseUrl).post('/api/admin/login').send({
-            username: 'Amir',
+        const res = await req().post('/api/admin/login').send({
+            username: 'Admin',
             password: 'wrongpassword'
         });
         expect(res.statusCode).toBe(401);
     });
 
-    // We can't easily test valid login without knowing the hash logic match (we do know it).
-    // The hash in .env matches 'amireli21'.
-    test('POST /api/admin/login with correct password should succeed', async () => {
-        const agent = request.agent(baseUrl);
-        const res = await agent.post('/api/admin/login').send({
-            username: 'Amir',
-            password: 'amireli21'
-        });
-        expect(res.statusCode).toBe(200);
-        expect(res.body.success).toBe(true);
+    test('POST /api/admin/login with correct password should succeed and allow access', async () => {
+        const agent = request.agent(app);
 
-        // Test protected route
-        const res2 = await agent.get('/api/admin/submissions');
-        expect(res2.statusCode).toBe(200);
-        expect(res2.body.success).toBe(true);
+        // 1. Login
+        const loginRes = await agent.post('/api/admin/login').send({
+            username: 'Admin',
+            password: 'Pass123'
+        });
+        expect(loginRes.statusCode).toBe(200);
+        expect(loginRes.body.success).toBe(true);
+
+        // 2. Access Protected Route
+        const protectedRes = await agent.get('/api/admin/submissions');
+        expect(protectedRes.statusCode).toBe(200);
+        expect(protectedRes.body.success).toBe(true);
+        expect(Array.isArray(protectedRes.body.data)).toBe(true);
     });
 });

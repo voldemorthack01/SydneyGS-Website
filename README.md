@@ -101,26 +101,47 @@ The SQLite database is auto-created at `data/submissions.db`.
 **Schema:** `submissions (id, full_name, phone, email, message, submitted_at)`
 
 ## 🌐 Deployment
-1. **Server**: Use a VPS (DigitalOcean, AWS) or Node host (Heroku, Render).
-2. **Reverse Proxy (Nginx)**: Recommended for SSL/TLS termination.
-   ```nginx
-   server {
-       listen 80;
-       server_name sydneygs.com;
-       location / {
-           proxy_pass http://localhost:3000;
-           proxy_set_header Host $host;
-           # ... standard proxy headers
-       }
-   }
-   ```
-3. **SSL**: Use Certbot (Let's Encrypt) for HTTPS.
-4. **Environment**: Set `NODE_ENV=production` and `SELF_URL=https://sydneygs.com/`.
+
+### 1. Clean URLs & Redirects
+The application uses Express middleware to serve clean URLs (e.g., `/contact`) and permanently redirect legacy paths (`/contact.html` → `/contact`).
+- **Canonical URLs**: All pages now reference `https://www.sydneygs.com/`.
+- **Nginx (Optional)**: If using Nginx as a reverse proxy, you can add this for extra performance, though Express handles it fine:
+  ```nginx
+  rewrite ^/(.*)\.html$ /$1 permanent;
+  ```
+
+### 2. Data Persistence
+The SQLite database lives in `/data/submissions.db`.
+- **Important**: This folder is **ignored** by git to prevent overwriting production data.
+- **Backup**: Regularly back up the `data/` folder from your server to a safe location (e.g., S3).
+- **Docker/Render**: Ensure you mount a **Persistent Disk** to `/opt/render/project/src/data` (or your app's path) so data survives redeploys.
+
+## 🚀 SEO & Local Search
+
+### 1. Technical SEO
+- **Metadata**: Unique Title, Description, and Open Graph tags on all pages.
+- **Schema.org**: `LocalBusiness` JSON-LD implemented for rich results (Maps, Knowledge Graph).
+- **Structure**: Semantic HTML5 (Header, Nav, Main, Footer).
+- **Sitemap**: Auto-generated at `/sitemap.xml` with clean URLs.
+
+### 2. Core Web Vitals Targets
+To maintain ranking, aim for:
+- **LCP (Loading)**: < 2.5s (Preload Hero images).
+- **INP (Interactivity)**: < 200ms (Defer non-critical JS).
+- **CLS (Stability)**: < 0.1 (Dimensions on all images).
+
+### 3. Google Business Profile (GBP) Checklist
+To dominate local search:
+1. **Consistency**: Ensure Name, Address, Phone matches website exactly.
+2. **Reviews**: Reply to every review within 24 hours.
+3. **Posts**: Add weekly updates with photos of recent jobs.
+4. **Services**: List specific suburbs (Parramatta, Penrith, Mosman, etc.).
 
 ## 🤝 Troubleshooting
 - **`npm install` fails**: Ensure Node.js is installed. Try deleting `node_modules` and `package-lock.json` and re-running.
 - **"Address in use"**: Check if another instance is running on port 3000.
-- **Login fails**: Verify `.env` hash matches the password. Use `generate_hash.js` snippet to make a new one if needed.
+- **Login fails**: Verify `.env` hash matches the password. Use `generate-hash.js` snippet to make a new one if needed.
+- **Redirect Loops**: Check `trust proxy` setting in `server.js` if behind a Load Balancer (Render/Heroku).
 
 ## 📜 License
 ISC License. Copyright © 2025 Sydney Gold Star Group.

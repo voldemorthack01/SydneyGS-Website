@@ -3,7 +3,7 @@ node_modules/
 # package-lock.json # Keep this for consistent installs
 
 # Database
-data/
+/data/
 *.db
 *.db-shm
 *.db-wal

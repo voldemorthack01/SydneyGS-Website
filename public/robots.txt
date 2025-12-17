@@ -1,7 +1,7 @@
 User-agent: *
 Allow: /
 Disallow: /api/
-Disallow: /admin.html
+Disallow: /admin
 Disallow: /js/admin.js
 
-Sitemap: https://sydneygs.com/sitemap.xml
+Sitemap: https://www.sydneygs.com/sitemap.xml
